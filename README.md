@@ -6,6 +6,12 @@ Scrapes off all content from a yiff.party page
 2. Requests
 3. beautifulsoup4
 
+To install python3 follow online instructions.
+To install the dependencies:
+```
+pip install -r requirements.txt
+```
+
 # Usage:
 1. Open the shell
 2. Run the following command replacing {links} with your url's:
