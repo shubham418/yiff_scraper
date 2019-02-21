@@ -19,9 +19,9 @@ def get_origin(URL):
     return origin
 
 # Returns list containing all files
-def get_links(URL, check_str):
-    response = requests.get(URL)
-    soup = BeautifulSoup(response.content, "html.parser")
+def get_links(URL, soup, check_str):
+    # response = requests.get(URL)  # TODO try http://masnun.com/2016/09/18/python-using-the-requests-module-to-download-large-files-efficiently.html
+    # soup = BeautifulSoup(response.content, "html.parser")
     links = soup.find_all('a')
     unfin_paths = []
     for link in links:
@@ -29,8 +29,10 @@ def get_links(URL, check_str):
         if href is None:
             continue
         # Check if link is of data
-        if check_str in href:
-            unfin_paths.append(href)
+        for str in check_str:
+            if str in href:
+                unfin_paths.append(href)
+                break
     return unfin_paths
 
 # Uses a link list to return a complete list of files
@@ -41,31 +43,48 @@ def get_paths(unfinished_lst, origin):
     return finished
 
 # Saves a file from the given URL
+# TODO fix no download issue on random files
 def save_file(URL):
     name = get_file_name(URL)
+    n = 1
+    while name in os.listdir():
+        lst = name.split('.')
+        ext = lst[-1]
+        lst = lst[:-1]
+        lst.append("({})".format(n))
+        temp_name = "".join(lst) +"."+ext
+        if temp_name not in os.listdir():
+            name = temp_name
+        n+=1
     print("\nDownloading {}".format(name))
     in_file = requests.get(URL, stream=True)
     out_file = open(name, 'wb')
-    for chunk in in_file.iter_content():
+    for chunk in in_file.iter_content(chunk_size=8192):
         out_file.write(chunk)
+    out_file.close()
     print("\n{} Complete".format(name))
 
 # Get all links and download them for the "project"
+# TODO implement project updating
+# TODO filter out thumbnails
 def download_and_save_all(URL):
     origin_path = get_origin(URL)
     origin_name = get_file_name(URL)
-    check_str = "patreon_data"
+    check_str = ["patreon_data", "patreon_inline"]
+
+    response = requests.get(URL)
+    soup = BeautifulSoup(response.content, "html.parser")
+    name_element = soup.find_all('span', {"class": "yp-info-name"})[0].string
 
     # Create folder to save files
     if origin_name not in os.listdir():
-        os.mkdir(origin_name)
+        os.mkdir(name_element)
     else:
         print("WARNING: Folder for same already exists. Please delete and try again.")
 
-    # Change to folder to save files
-    os.chdir(origin_name)
+    os.chdir(name_element)
 
-    links = get_paths(get_links(URL, check_str), origin_path)
+    links = get_paths(get_links(URL, soup, check_str), origin_path)
 
     for file_path in links:
         save_file(file_path)
