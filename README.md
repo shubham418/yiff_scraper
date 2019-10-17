@@ -18,3 +18,14 @@ pip install -r requirements.txt
 ```
 python yiff_scraper.py {link 1} {link 2} {any number of links}
 ```
+# External Files:
+The script will look for links to
+ - https://dropbox.com
+ - https://drive.google.com/
+ - https://mega.nz/ - only saves links to text file. Can download via `megadl` cli:
+```
+while read link; do
+  megadl "$link"
+done < "./mega.nz.txt"
+```
+ - https://onedrive.live.com/ - only saves links to text file `OneDrive.txt`

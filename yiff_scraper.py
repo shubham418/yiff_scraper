@@ -2,6 +2,7 @@ import sys
 import os
 import requests
 from bs4 import BeautifulSoup
+from scraper import ext_hosters
 
 
 # Returns the name of the file
