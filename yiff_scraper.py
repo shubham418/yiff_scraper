@@ -73,7 +73,6 @@ def save_file(URL):
 # Get all links and download them for the "project"
 # TODO implement project updating
 # TODO filter out thumbnails
-# TODO Download all available pages
 def download_and_save_all(URL):
     origin_path = get_origin(URL)  # broken
     origin_path = 'https://yiff.party/'

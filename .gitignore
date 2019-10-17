@@ -1,11 +1,2 @@
 /venv
 .idea
-
-*
-
-!scraper/*
-!.gitignore
-!LICENSE
-!README.md
-!requirements.txt
-!yiff_scraper.py
