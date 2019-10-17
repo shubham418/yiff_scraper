@@ -73,7 +73,8 @@ def save_file(URL):
 # TODO implement project updating
 # TODO filter out thumbnails
 def download_and_save_all(URL):
-    origin_path = get_origin(URL)
+    origin_path = get_origin(URL)  # broken
+    origin_path = 'https://yiff.party/'
     check_str = ["patreon_data", "patreon_inline"]
 
     response = requests.get(URL)
@@ -88,10 +89,15 @@ def download_and_save_all(URL):
 
     os.chdir(name_element)
 
+    ext_hosters.get_hosted_files(soup)
+
     links = get_paths(get_links(soup, check_str), origin_path)
 
     for file_path in links:
-        save_file(file_path)
+        try:
+            save_file(file_path)
+        except Exception as e:
+            print('ERROR: Could not save ' + file_path + '. Exception: ' + str(e))
 
     # return back to execution dir
     os.chdir("..")
