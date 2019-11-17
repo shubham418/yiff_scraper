@@ -2,30 +2,18 @@ import requests
 import os
 import zipfile
 import re
+from scraper import yandisk
+from scraper import filenaming
 
 
 # Main function call to get the links for all externally hosted file and download them if available.
 # (Sorted by functions only saving the links VS actual downloads.)
 def get_hosted_files(soup):
     get_mega(soup)
+    get_yandisk(soup)
     get_onedrive(soup)
     get_dropbox(soup)
     get_gdrive(soup)
-
-
-# Number the filename if it exists already.
-def _check_file_exists(filename):
-    n = 1
-    while filename in os.listdir():
-        lst = filename.split('.')
-        ext = lst[-1]
-        lst = lst[:-1]
-        lst.append("({})".format(n))
-        temp_name = "".join(lst) + "." + ext
-        if temp_name not in os.listdir():
-            filename = temp_name
-        n += 1
-    return filename
 
 
 # Get all links to Dropbox on this page and try to download them.
@@ -92,8 +80,20 @@ def get_mega(soup):
     file.close()
 
 
+# Get all links to Yandex (Yandisk, yadi.sk) and save them to a file.
+def get_yandisk(soup):
+    print('Getting Yandi.sk links..')
+    links = []
+    for link in soup.findAll('a'):
+        this_link = link.get('href')
+        if 'yadi.sk' in str(this_link).lower():
+            links.append(str(this_link))
+    for link in links:
+        yandisk.download_yadisk_link(link)
+
+
 # Unzip any .zip file.
-def _unzip_dl(filename, remove_file=False):
+def unzip_dl(filename, remove_file=False):
     try:
         extract_folder = filename.rstrip('.zip')
         os.mkdir(extract_folder)
@@ -119,10 +119,10 @@ def _dl_file(url):
         with open('downloads.log', 'a+') as file:
             file.write(str(url) + '\n')
             file.close()
-    filename = _check_file_exists(filename)
+    filename = filenaming.numbering(filename)
     print('Downloading ' + url + ' to ./' + filename)
     file = open(filename, 'w+b')
     file.write(download.content)
     file.close()
     if filename.lower().endswith('.zip'):
-        _unzip_dl(filename=filename, remove_file=True)
+        unzip_dl(filename=filename, remove_file=True)
