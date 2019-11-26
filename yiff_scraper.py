@@ -1,8 +1,21 @@
 import sys
-import os
 import requests
 from bs4 import BeautifulSoup
-from scraper import ext_hosters
+from downloader import download, post_process
+
+import logging
+import os
+
+if not os.path.isfile('yiff_scraper.log'): open('yiff_scraper.log', 'a+').close()
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s *%(levelname)s* %(name)s in %(filename)s.%(funcName)s: %(message)s',
+                    handlers=[logging.FileHandler('yiff_scraper.log', mode='a'), logging.StreamHandler()])
+
+
+def _get_pages(soup):
+    html_pages = soup.find("p", class_="paginate-count").get_text()
+    split_pages = html_pages.split(" / ")
+    return int(split_pages[0]), int(split_pages[1])
 
 
 # Returns the name of the file
@@ -62,17 +75,30 @@ def save_file(URL):
             name = temp_name
         n += 1
     print("\nDownloading {}".format(name))
-    in_file = requests.get(URL, stream=True)
-    out_file = open(name, 'wb')
-    for chunk in in_file.iter_content(chunk_size=8192):
-        out_file.write(chunk)
-    out_file.close()
+    response = requests.get(URL, stream=True)
+    with open(name, "wb") as f:
+        for chunk in response.iter_content(32768):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
     print("\n{} Complete".format(name))
+    download.unpack(filename=name, remove_file=True)
 
 
 # Get all links and download them for the "project"
 # TODO implement project updating
 # TODO filter out thumbnails
+def download_and_save_page(soup, check_str, origin_path):
+    download.get_soups(soup)
+
+    links = get_paths(get_links(soup, check_str), origin_path)
+
+    for file_path in links:
+        try:
+            save_file(file_path)
+        except Exception as e:
+            print('ERROR: Could not save ' + file_path + '. Exception: ' + str(e))
+
+
 def download_and_save_all(URL):
     origin_path = get_origin(URL)  # broken
     origin_path = 'https://yiff.party/'
@@ -90,15 +116,19 @@ def download_and_save_all(URL):
 
     os.chdir(name_element)
 
-    ext_hosters.get_hosted_files(soup)
+    download_and_save_page(soup, check_str, origin_path)  # save this page
 
-    links = get_paths(get_links(soup, check_str), origin_path)
+    if not "p=" in URL:  # particular page number selected, only download single page
+        for page in range(2, _get_pages(soup)[1]+1, 1):  # go with each page
+            page_url = URL.rsplit("?", 1)[0] + "?p=" + str(page)
+            page_soup = BeautifulSoup(requests.get(page_url).content, "html.parser")
+            print("Saving "+ name_element + "page " + str(page))
+            download_and_save_page(page_soup, check_str, origin_path)
 
-    for file_path in links:
-        try:
-            save_file(file_path)
-        except Exception as e:
-            print('ERROR: Could not save ' + file_path + '. Exception: ' + str(e))
+    try:
+        post_process.cleanup()
+    except:
+        print("WARNING: Couldn't cleanup.")
 
     # return back to execution dir
     os.chdir("..")
