@@ -13,9 +13,12 @@ logging.basicConfig(level=logging.INFO,
 
 
 def _get_pages(soup):
-    html_pages = soup.find("p", class_="paginate-count").get_text()
-    split_pages = html_pages.split(" / ")
-    return int(split_pages[0]), int(split_pages[1])
+    html_pages = soup.find("p", class_="paginate-count")
+    if html_pages:
+        split_pages = html_pages.get_text().split(" / ")
+        return int(split_pages[0]), int(split_pages[1])
+    else:
+        return 1, 1
 
 
 # Returns the name of the file
@@ -107,6 +110,7 @@ def download_and_save_all(URL):
     response = requests.get(URL)
     soup = BeautifulSoup(response.content, "html.parser")
     name_element = soup.find_all('span', {"class": "yp-info-name"})[0].string
+    print("*" + name_element)
 
     # Create folder to save files
     if name_element not in os.listdir():
