@@ -1,9 +1,12 @@
+import logging
 
 import os
 import subprocess
 
+logger = logging.getLogger("post-process")
 
-def _get_wsl(cmd):
+
+def _get_os(cmd):
     if os.name == 'nt':
         process_cmd = ['wsl']
     else:
@@ -12,20 +15,23 @@ def _get_wsl(cmd):
 
 
 def _clean_fdupes(folder="."):
-    print(subprocess.check_output(
-        _get_wsl(["fdupes", "-Srd", "--noprompt", folder])
+    logger.info(subprocess.check_output(
+        _get_os(["fdupes", "-Srd", "--noprompt", folder])
     ).decode("utf8"))
 
 
 def _clean_empty_folders(folder="."):
-    print(subprocess.check_output(
-        _get_wsl(["find", folder, "-type", "d", "-empty"])
+    logger.debug(subprocess.check_output(
+        _get_os(["find", folder, "-type", "d", "-empty"])
     ).decode("utf8"))
-    print(subprocess.check_output(
-        _get_wsl(["find", folder, "-type", "d", "-empty", "-delete"])
+    logger.info(subprocess.check_output(
+        _get_os(["find", folder, "-type", "d", "-empty", "-delete"])
     ).decode("utf8"))
 
 
 def cleanup(folder="."):
     _clean_fdupes(folder)
     _clean_empty_folders(folder)
+
+if __name__ == '__main__':
+    cleanup()
