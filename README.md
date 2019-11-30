@@ -15,9 +15,10 @@ apt install fdupes megatools p7zip-full
 ```
 **Windows**
 * _**Subsystem for Linux** Executing the shell commands on Windows._
-* _**7zip**_ Python patoolib uses 7zip._
+* _**7zip** Python patoolib uses 7zip._
 ```
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+https://www.7-zip.org/download.html
 ```
 
 # Usage:
