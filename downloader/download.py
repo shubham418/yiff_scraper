@@ -13,7 +13,15 @@ from downloader import dropbox, googledrive, mega, onedrive, yandisk
 from zipfile import ZipFile
 import patoolib
 
-logger = logging.getLogger('file handling')
+logger = logging.getLogger('file_handling')
+
+
+def get_os_cmd(cmd):
+    if os.name == 'nt':
+        process_cmd = ['wsl']
+    else:
+        process_cmd = []
+    return process_cmd + cmd
 
 
 def get_soups(soup):
