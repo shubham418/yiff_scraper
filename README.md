@@ -1,7 +1,15 @@
 # yiff_scraper
 Scrapes off all content from a yiff.party page.
 
-# Requirements:
+## External Files:
+The script will download files from if they are linked on the respective page
+* https://dropbox.com
+* https://drive.google.com/
+* https://mega.nz/
+* https://onedrive.live.com/
+* https://disk.yandex.com
+
+## Requirements:
 **Python 3** 
 ```
 pip install -r requirements.txt
@@ -21,7 +29,7 @@ Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-L
 https://www.7-zip.org/download.html
 ```
 
-# Usage:
+## Usage:
 1. Open the shell
 2. Run the following command replacing {links} with your urls:
 ```
@@ -29,10 +37,3 @@ python yiff_scraper.py {link 1} {link 2} {any number of links}
 ```
 _You may pass a page number within the link `?p=` to download a single page only (e.g. just updating from first page)._
 
-## External Files:
-The script will download files from if they are linked on the respective page
-* https://dropbox.com
-* https://drive.google.com/
-* https://mega.nz/
-* https://onedrive.live.com/
-* https://disk.yandex.com
