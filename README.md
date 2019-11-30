@@ -6,15 +6,16 @@ Scrapes off all content from a yiff.party page.
 ```
 pip install -r requirements.txt
 ```
-**fdupes** _Used for cleanup after downloading._
+**Linux** 
+* _**fdupes** Used for cleanup after downloading._
+* _**megatools**(megadl) Downloads files from mega.nz._
+* _**p7zip-full** Python patoolib uses 7zip._
 ```
-apt install fdupes
+apt install fdupes megatools p7zip-full
 ```
-**megatools** _Downloading files from mega.nz._
-```
-apt install megatools
-```
-**Subsystem for Linux** _If you want to clean up and download from mega.nz on Windows._
+**Windows**
+* _**Subsystem for Linux** Executing the shell commands on Windows._
+* _**7zip**_ Python patoolib uses 7zip._
 ```
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 ```
