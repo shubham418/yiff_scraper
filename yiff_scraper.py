@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3.6
+
 import sys
 import requests
 from bs4 import BeautifulSoup
