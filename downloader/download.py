@@ -106,7 +106,8 @@ def download(url, fname=None):
     try:
         url = str(url).replace('http://https://', 'https://', 1)  # http://https:// sometimes seems to happen?
         response = requests.get(url, allow_redirects=True)
-    except:
+    except Exception as e:
+        logger.error(e)
         log_failed_download(url)
         return False
     fname = get_filename(response, fname=fname)
