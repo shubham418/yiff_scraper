@@ -9,14 +9,6 @@ from downloader import download, url_patterns
 logger = logging.getLogger('mega')
 
 
-def _get_os_cmd(cmd):
-    if os.name == 'nt':
-        process_cmd = ['wsl']
-    else:
-        process_cmd = []
-    return process_cmd + cmd
-
-
 def get_link(link):
     link = link.replace('http://https://', 'https://', 1)
     if link.startswith("!#"):
@@ -49,7 +41,11 @@ def get_soup(soup):
     for element in soup.strings:
         if any(pattern in str(element).lower() for pattern in url_patterns.mega):
             links.append(_clean_link(element))
-    links = list(dict.fromkeys(links))
+    for link in soup.findAll('a'):
+        this_link = link.get('href')
+        if any(pattern in str(this_link).lower() for pattern in url_patterns.mega):
+            links.append(_clean_link(this_link))
+    links = list(dict.fromkeys(links))  # remove duplicates
     logger.debug('Found MEGA links: ' + str(links))
     for link in links:
         get_link(link)
