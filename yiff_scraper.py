@@ -2,6 +2,15 @@ import sys
 import os
 import requests
 from bs4 import BeautifulSoup
+import time
+from random import randint
+min_sleep_time=1
+max_sleep_time=3
+
+
+def sleepy_time():
+    sleep_time=randint(min_sleep_time,max_sleep_time)
+    time.sleep(sleep_time)
 
 
 # Returns the name of the file
@@ -67,6 +76,7 @@ def save_file(URL):
         out_file.write(chunk)
     out_file.close()
     print("\n{} Complete".format(name))
+    sleepy_time()
 
 
 # Get all links and download them for the "project"
