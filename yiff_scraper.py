@@ -11,23 +11,29 @@ def get_file_name(URL):
     return name
 
 
-# Gets the origin url
-def get_origin(URL):
-    lst = URL.rsplit("/")
-    length = len(lst)
-    lst = lst[2 : (length - 1)]
-    origin = "https://"
-    for x in lst:
-        origin += x
-    return origin
+# # Gets the origin url
+# def get_origin(URL):
+#     lst = URL.rsplit("/")
+#     length = len(lst)
+#     lst = lst[2 : (length - 1)]
+#     origin = "https://"
+#     for x in lst:
+#         origin += x
+#     return origin
 
+
+# # Returns list containing all files
+# def get_links(soup):
+#     tags = soup.find_all("div", {"class":"card-action"})
+#     tags = list(map(lambda tag: tag.a.get("href"), tags))
+#     return tags
 
 # Returns list containing all files
 def get_links(soup, check_str):
-    links = soup.find_all("a")
+    links = soup.find_all('a')
     unfin_paths = []
     for link in links:
-        href = link.get("href")
+        href = link.get('href')
         if href is None:
             continue
         # Check if link is of data
@@ -39,6 +45,7 @@ def get_links(soup, check_str):
 
 
 # Uses a link list to return a complete list of files
+# TODO might have to remove as website now provides complete links
 def get_paths(unfinished_lst, origin):
     finished = []
     for x in unfinished_lst:
@@ -73,12 +80,19 @@ def save_file(URL):
 # TODO implement project updating
 # TODO filter out thumbnails
 def download_and_save_all(URL):
-    origin_path = get_origin(URL)
+    # origin_path = get_origin(URL)
     check_str = ["patreon_data", "patreon_inline"]
 
     response = requests.get(URL)
     soup = BeautifulSoup(response.content, "html.parser")
-    name_element = soup.find_all("span", {"class": "yp-info-name"})[0].string
+    name_element = soup.find_all("span", {"class": "yp-info-name"})[0].text
+    page_element = soup.find_all("p", {"class": "paginate-count"})[0].text
+    curr_page = int(page_element.split('/')[0])
+    total_pages = int(page_element.split('/')[1])
+
+    print(f"Beginning {name_element}%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+    print("")
+    print(f'name: {name_element}\npage: {curr_page}\ntotal pages: {total_pages}')
 
     # Create folder to save files
     if name_element not in os.listdir():
@@ -88,7 +102,22 @@ def download_and_save_all(URL):
 
     os.chdir(name_element)
 
-    links = get_paths(get_links(soup, check_str), origin_path)
+    # from 1st page
+    links = get_links(soup, check_str)
+
+    while curr_page != total_pages:
+        curr_page += 1
+        payload = {'p':curr_page}
+        response = requests.get(URL, params=payload)
+        soup = BeautifulSoup(response.content, "html.parser")
+        page_element = soup.find_all("p", {"class": "paginate-count"})[0].text
+        curr_page = int(page_element.split('/')[0])
+        total_pages = int(page_element.split('/')[1])
+
+        links += get_links(soup, check_str)
+        print(f'Processing page: {page_element}')
+
+    print(f'Number of links: {len(links)}')
 
     for file_path in links:
         save_file(file_path)
