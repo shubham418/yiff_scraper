@@ -6,16 +6,16 @@ from bs4 import BeautifulSoup
 
 # Returns the name of the file
 def get_file_name(URL):
-    lst = URL.rsplit('/')
+    lst = URL.rsplit("/")
     name = lst[-1]
     return name
 
 
 # Gets the origin url
 def get_origin(URL):
-    lst = URL.rsplit('/')
+    lst = URL.rsplit("/")
     length = len(lst)
-    lst = lst[2:(length-1)]
+    lst = lst[2 : (length - 1)]
     origin = "https://"
     for x in lst:
         origin += x
@@ -24,10 +24,10 @@ def get_origin(URL):
 
 # Returns list containing all files
 def get_links(soup, check_str):
-    links = soup.find_all('a')
+    links = soup.find_all("a")
     unfin_paths = []
     for link in links:
-        href = link.get('href')
+        href = link.get("href")
         if href is None:
             continue
         # Check if link is of data
@@ -42,7 +42,7 @@ def get_links(soup, check_str):
 def get_paths(unfinished_lst, origin):
     finished = []
     for x in unfinished_lst:
-        finished.append(origin+x)
+        finished.append(origin + x)
     return finished
 
 
@@ -52,7 +52,7 @@ def save_file(URL):
     name = get_file_name(URL)
     n = 1
     while name in os.listdir():
-        lst = name.split('.')
+        lst = name.split(".")
         ext = lst[-1]
         lst = lst[:-1]
         lst.append("({})".format(n))
@@ -62,7 +62,7 @@ def save_file(URL):
         n += 1
     print("\nDownloading {}".format(name))
     in_file = requests.get(URL, stream=True)
-    out_file = open(name, 'wb')
+    out_file = open(name, "wb")
     for chunk in in_file.iter_content(chunk_size=8192):
         out_file.write(chunk)
     out_file.close()
@@ -78,7 +78,7 @@ def download_and_save_all(URL):
 
     response = requests.get(URL)
     soup = BeautifulSoup(response.content, "html.parser")
-    name_element = soup.find_all('span', {"class": "yp-info-name"})[0].string
+    name_element = soup.find_all("span", {"class": "yp-info-name"})[0].string
 
     # Create folder to save files
     if name_element not in os.listdir():
@@ -105,6 +105,8 @@ if __name__ == "__main__":
         download_and_save_all(project)
         print("\n*Project {} done".format(get_file_name(project)))
 
-    print("\n*******************************************************************************\n")
+    print(
+        "\n*******************************************************************************\n"
+    )
     print("\nAll projects DONE\n")
     print("\nEnjoy ;)")
