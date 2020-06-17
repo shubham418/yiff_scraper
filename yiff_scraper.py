@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 import threading
 import concurrent.futures
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 
 
 # Returns the name of the file
@@ -14,7 +16,9 @@ def get_file_name(URL):
 
 
 # Returns list containing all files
-def get_links(soup, check_str):
+# filter_types: bl->blacklist, wh->whitelist, None->no_filter
+# filter_list example: ['rar', 'jpg']
+def get_links(soup, check_str, filter_type=None, filter_list=None):
     links = soup.find_all("a")
     unfin_paths = []
     for link in links:
@@ -22,6 +26,12 @@ def get_links(soup, check_str):
         if href is None:
             continue
         # Check if link is of data
+        if (filter_type == "bl"):
+            if href.split('.')[-1] in filter_list:
+                continue
+        elif (filter_type == "wh"):
+            if href.split('.')[-1] not in filter_list:
+                continue
         for string in check_str:
             if string in href:
                 unfin_paths.append(href)
@@ -53,69 +63,115 @@ def get_paths(unfinished_lst):
     return finished
 
 
+def save_file(file_name, URL):
+    print(f"\nDownloading {file_name} from {URL}")
+    in_file = requests.get(URL, stream=True)
+    if in_file.ok:
+        with open(file_name, "wb") as f:
+            for chunk in in_file.iter_content(chunk_size=8192):
+                f.write(chunk)
+    print(f"{file_name} Complete")
+
+
+def new_save_file(tuple_):
+    file_name, URL = tuple_
+    print(f"\nDownloading {file_name} from {URL}")
+    in_file = requests.get(URL, stream=True)
+    if in_file.ok:
+        with open(file_name, "wb") as f:
+            for chunk in in_file.iter_content(chunk_size=8192):
+                f.write(chunk)
+    print(f"{file_name} Complete")
+
+
 # Saves a file from the given URL
 # TODO fix no download issue on random files
-def save_file(URL):
-    name = get_file_name(URL)
-    n = 1
-    while name in os.listdir():
-        lst = name.split(".")
-        ext = lst[-1]
-        lst = lst[:-1]
-        lst.append(f'({n})')
-        temp_name = "".join(lst) + "." + ext
-        if temp_name not in os.listdir():
-            name = temp_name
-        n += 1
-    print(f"\nDownloading {name} from {URL}")
-    in_file = requests.get(URL, stream=True)
-    with open(name, "wb") as f:
-        for chunk in in_file.iter_content(chunk_size=8192):
-            f.write(chunk)
-    print(f"{name} Complete")
+def save_files(download_dict):
+    r_mode = 3  # 0->Linear 1->Normal_threading 2->Threadpool 3->multiprocess
 
-
-def download_manager(name, links):
-    # Create folder to save files
-    if name not in os.listdir():
-        os.mkdir(name)
-    else:
-        print("WARNING: Folder for same already exists. Please delete and try again.")
-    os.chdir(name)
-
-    download_mode = 0  # 0:standard, 1:threading, 2:pooling
-
-    if download_mode == 0:
-        for file_path in links:
-            save_file(file_path)
-
-    elif download_mode == 1:
+    if r_mode == 1:
         threads = []
-        for file_path in links:
-            t = threading.Thread(target=save_file, args=[file_path])
+        for file_name, URL in download_dict.items():
+            t = threading.Thread(target=save_file, args=[file_name, URL])
             t.start()
             threads.append(t)
             # save_file(file_path)
         for thread in threads:
             thread.join()
 
-    elif download_mode == 2:
+    elif r_mode == 2:
         with concurrent.futures.ThreadPoolExecutor() as executer:
             results = [
-                executer.submit(save_file, file_path) for file_path in links
+                executer.submit(save_file, file_name, URL)
+                for file_name, URL in download_dict.items()
             ]
             for f in concurrent.futures.as_completed(results):
                 f.result()
 
-    # return back to execution dir
-    os.chdir("..")
+    elif r_mode == 3:
+        pool = Pool()
+        pool.map(new_save_file, download_dict.items())
 
+    else:
+        for file_name, URL in download_dict.items():
+            save_file(file_name, URL)
+
+
+def download_dict_gen(links):
+    download_dict = {}  # {filename : url}
+    unique_file_names = []
+    for url in links:
+        name = get_file_name(url)
+        n = 1
+        while name in unique_file_names:
+            lst = name.split(".")
+            ext = lst[-1]
+            lst = lst[:-1]
+            lst.append(f"({n})")
+            temp_name = "".join(lst) + "." + ext
+            if temp_name not in unique_file_names:
+                name = temp_name
+            n += 1
+        unique_file_names.append(name)
+        download_dict[f"{name}"] = url
+    return download_dict
+
+def clear_existing_files(download_dict, existing_files):
+    cleared_dict = { file_name: download_dict[file_name] for file_name in download_dict if file_name not in existing_files}
+    return cleared_dict
+
+
+def download_manager(name, links):
+    # Create folder to save files
+    if 'Downloads' not in os.listdir():
+        os.mkdir('Downloads')
+    os.chdir('Downloads')
+
+    download_dict = download_dict_gen(links)
+
+    if name not in os.listdir():
+        os.mkdir(name)
+    else:
+        print("WARNING: Project already exists, updating has limitations and might not work perfectly.")
+        download_dict = clear_existing_files(download_dict, os.listdir(name))
+
+    os.chdir(name)
+
+    # download_dict = download_dict_gen(links)
+    save_files(download_dict)
+
+    # return back to execution dir
+    os.chdir("../..")
 
 
 # Get all links and download them for the "project"
 # TODO implement project updating
 def project_links_scraper(URL):
-    check_str = ["patreon_data", "patreon_inline"] #strings that indicate content
+    check_str = ["patreon_data", "patreon_inline"]  # strings that indicate content
+    blacklist_extensions = ["rar", "zip"]
+    whitelist_extensions = ["png", "jpg", "gif", "mp4"]
+    filter_type='bl'
+    filter_list=blacklist_extensions
 
     response = requests.get(URL)
     soup = BeautifulSoup(response.content, "html.parser")
@@ -129,7 +185,7 @@ def project_links_scraper(URL):
     print(f"name: {name_element}\npage: {curr_page}\ntotal pages: {total_pages}")
 
     # from 1st page
-    links = get_links(soup, check_str)
+    links = get_links(soup, check_str, filter_type=filter_type, filter_list=filter_list)
 
     while curr_page != total_pages:
         curr_page += 1
@@ -140,7 +196,7 @@ def project_links_scraper(URL):
         curr_page = int(page_element.split("/")[0])
         total_pages = int(page_element.split("/")[1])
 
-        links += get_links(soup, check_str)
+        links += get_links(soup, check_str, filter_type=filter_type, filter_list=filter_list)
         print(f"Processing page: {page_element}")
 
     print(f"Number of links: {len(links)}")
