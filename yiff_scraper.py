@@ -46,12 +46,25 @@ def get_links(soup, check_str):
 
 # Uses a link list to return a complete list of files
 # TODO might have to remove as website now provides complete links
+# Uses a link list to return a complete list of files
 def get_paths(unfinished_lst, origin):
     finished = []
     for x in unfinished_lst:
-        finished.append(origin + x)
+        if 'http' in x.split('/')[0]:
+            finished.append(x)
+        else:
+            finished.append(origin + x)
     return finished
 
+
+def new_origin(links):
+    good_link = ''
+    for x in links:
+        if 'http' in x.split('/')[0]:
+            good_link = x
+            break
+    origin = good_link.split('patreon_data')[0]
+    return origin
 
 # Saves a file from the given URL
 # TODO fix no download issue on random files
@@ -73,7 +86,8 @@ def save_file(URL):
     for chunk in in_file.iter_content(chunk_size=8192):
         out_file.write(chunk)
     out_file.close()
-    print("\n{} Complete".format(name))
+    print("{} Complete".format(name))
+    print(f'{URL}')
 
 
 # Get all links and download them for the "project"
@@ -119,7 +133,10 @@ def download_and_save_all(URL):
 
     print(f'Number of links: {len(links)}')
 
-    for file_path in links:
+    origin_path = new_origin(links)
+    final_links = get_paths(links, origin_path)
+
+    for file_path in final_links:
         save_file(file_path)
 
     # return back to execution dir
