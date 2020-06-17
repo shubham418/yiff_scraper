@@ -1,2 +1,6 @@
 /venv
 .idea
+.vscode
+tester.py
+simple.py
+/Downloads
